@@ -11,7 +11,8 @@ function ViewerSlider({
     onClose,
     activeTooltip,
     onTooltipClick,
-    itemsShownText
+    itemsShownText,
+    handleTooltipClose
 }) {
     const MIN_ZOOM = 1;
     const MAX_ZOOM = 3.1;
@@ -85,6 +86,11 @@ function ViewerSlider({
             }
         };
     }, []);
+
+
+    useEffect(() => {
+        handleTooltipClose();
+    }, [zoomValue])
 
     useEffect(() => {
         document.body.classList.add('media-viewer-open', 'gallery-fullscreen-mode');

@@ -3,7 +3,7 @@ import ViewerSlider from "./ViewerSlider";
 import { isMobile, isTablet, isDesktop } from 'react-device-detect';
 
 
-function GalleryItem({ media, baseWidth, onTooltipClick, activeTooltip, mediaList, mediaIndex, itemsShownText }) {
+function GalleryItem({ media, baseWidth, onTooltipClick, activeTooltip, mediaList, mediaIndex, itemsShownText, handleTooltipClose }) {
     
     const [viewerIsVisible, setViewerIsVisible] = useState(false);
 
@@ -148,6 +148,7 @@ function GalleryItem({ media, baseWidth, onTooltipClick, activeTooltip, mediaLis
                     onTooltipClick={onTooltipClick}
                     activeTooltip={activeTooltip}
                     itemsShownText={itemsShownText}
+                    handleTooltipClose={handleTooltipClose}
                 />
             )}
     

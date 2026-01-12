@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import GalleryItem from './GalleryItem'; 
 
-function GalleryGrid({ mediaList, gridHeight, baseWidth, onTooltipClick, activeTooltip, hasMore, tooltipClosingAnimation, itemsShownText }) {
+function GalleryGrid({ mediaList, gridHeight, baseWidth, onTooltipClick, activeTooltip, hasMore, tooltipClosingAnimation, itemsShownText, handleTooltipClose }) {
     return (
         <div className={`metagallery-gallery-grid ${ hasMore ? 'has-more': '' }`} style={{ height: `${gridHeight}px` }}>
             {mediaList.map((media, mediaIndex) => (
@@ -15,6 +15,7 @@ function GalleryGrid({ mediaList, gridHeight, baseWidth, onTooltipClick, activeT
                     mediaList={mediaList}
                     tooltipClosingAnimation = { tooltipClosingAnimation }
                     itemsShownText = { itemsShownText }
+                    handleTooltipClose={handleTooltipClose}
                 />
             ))}
         </div>

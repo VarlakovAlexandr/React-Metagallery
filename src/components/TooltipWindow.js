@@ -10,6 +10,7 @@ function TooltipWindow({
     onAnimationCloseEnd,
     onAnimationOpenEnd,
     calculatePosition,
+    isViewerCaller
 }) {
     const tooltipRef = useRef(null);
     const [isMeasured, setIsMeasured] = useState(false);
@@ -145,7 +146,7 @@ function TooltipWindow({
     return (
         <div
             ref={tooltipRef}
-            className="tooltip-window"
+            className={`tooltip-window ${ isViewerCaller ? "viewer-caller" : "" }`}  
             style={
                 isMeasured
                     ? finalPosition

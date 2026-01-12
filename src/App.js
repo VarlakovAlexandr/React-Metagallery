@@ -47,6 +47,8 @@ function App() {
     const [loadBtnTextLoading, setLoadBtnTextLoading] = useState('');
     const [exitFullScreenText,  setExitFullScreenText] = useState('');
     const [itemsShownText, setItemsShownText ]= useState('');
+
+    const [isViewerCaller, setIsViewerCaller ]= useState(false);
     
 
     
@@ -70,6 +72,9 @@ function App() {
 
     const btnsRootRef = useRef(null);
     const btnsScope = useRef(null);
+
+
+    
 
 
     useEffect( () => {
@@ -309,6 +314,11 @@ function App() {
 
 
     const handleTooltipOpen = useCallback((tooltipData, triggerElement, mediaId) => {
+
+        const testViewerCalled = triggerElement.closest('.metagallery-item-viewer__slide-root')
+
+        setIsViewerCaller(testViewerCalled);
+
         // 1. Явное закрытие (onTooltipClick(null, ...))
         if (!tooltipData) {
             if (!activeTooltip) return;
@@ -666,7 +676,7 @@ function App() {
             const data = await fetchMediaGallery(params);
 
             
-            console.log(data);
+            
             if (!data.success) {
                 throw new Error('Failed to load data');
             }
@@ -1171,6 +1181,7 @@ function App() {
                         hasMore={hasMore}
                         tooltipClosingAnimation = {tooltipClosingAnimation}
                         itemsShownText = { itemsShownText }
+                        handleTooltipClose={handleTooltipClose}
                     />
 
                     <GalleryLoader 
@@ -1179,6 +1190,7 @@ function App() {
                         loadBtnTextLoading={loadBtnTextLoading}
                         isLoadingMore={isLoadingMore}
                         hasMore={hasMore}
+                        
                     />   
 
                     <div className='metagallery-btn-container-wrapper' ref={btnsRootRef}>
@@ -1236,6 +1248,7 @@ function App() {
 
                         
                 <TooltipWindow
+                    isViewerCaller = { isViewerCaller }
                     tooltipData={activeTooltip?.tooltipData}
                     triggerElement={activeTooltip?.triggerElement}
                     isActive={!!activeTooltip}

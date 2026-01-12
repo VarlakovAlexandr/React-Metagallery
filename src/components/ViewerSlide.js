@@ -53,10 +53,26 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
 
 
     
+    const handleTooltipClick = (tooltipData, event) => {
+        event.stopPropagation();
+        
+        const isCurrentlyActive = activeTooltip && 
+                                 activeTooltip.tooltipData.id === tooltipData.id && 
+                                 activeTooltip.mediaId === media.id;
+        
+        if (isCurrentlyActive) {
+            onTooltipClick(null, null, null);
+        } else {
+            onTooltipClick(tooltipData, event.currentTarget, media.id);
+        }
+    };
 
 
-
-    
+    const isTooltipWindowActive = (tooltipId) => {
+        return activeTooltip && 
+               activeTooltip.tooltipData.id === tooltipId && 
+               activeTooltip.mediaId === media.id;
+    };
 
 
     const recalcFittingSizes = useCallback(() => {
@@ -76,12 +92,7 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
         setFittingSizes(sizes);
     }, [media.width, media.height]);
 
-    useEffect(() => {
-
-        console.log(media);
-        console.log(mediaList[mediaIndex]);
-        
-    }, [])
+    
 
     useEffect(() => {
         const checkCaptionHeight = () => {
@@ -568,6 +579,9 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
                         const isActive = isTooltipActive(tooltip.id);
                         const tooltipClass = `tooltip-window-trigger ${isActive ? 'active' : highlightedClass || ''}`;
 
+                        
+
+
                         return (
                             <button
                                 key={`${media.id}-${tooltip.id}`}
@@ -580,12 +594,15 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
                                 }}
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    if (onTooltipClick) {
+
+                                    handleTooltipClick(tooltip, e)
+
+                                    /*if (onTooltipClick) {
                                         onTooltipClick({
                                             media,
                                             tooltipData: tooltip,
                                         });
-                                    }
+                                    }*/
                                 }}
                             >
                                 <svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg">

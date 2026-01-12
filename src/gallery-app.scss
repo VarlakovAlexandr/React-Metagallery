@@ -294,6 +294,7 @@ body.gallery-fullscreen-mode{
     row-gap: 12px;
 
     opacity: 0;
+    
 }
 
 @media (min-width: 992px) {
@@ -306,9 +307,11 @@ body.gallery-fullscreen-mode{
         transform: translate(0, 10px);*/
         left: unset;
         top: unset;
-        z-index: 1050;
+        z-index: 4000;
     }
 }
+
+
 
 .tooltip-window .btn.btn-outline-dark {
     border-color: transparent;
@@ -436,6 +439,33 @@ body.gallery-fullscreen-mode{
     font-size: 12px;
     color: var(--black-color-black-100);
 }
+
+.tooltip-window.viewer-caller{
+
+    .tooltip-window__description{
+        display: -webkit-box;
+        -webkit-line-clamp: 5; 
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+
+    @media ( min-width: 992px ){
+        width: 320px;
+        row-gap: 12px;
+        padding: 20px 6px 32px;
+
+        
+
+        .tooltip-window__img-block{
+            width: 80%;
+        }
+    }
+}
+
+
+
 
 @media (min-width: 992px) {
     .tooltip-window__description {
@@ -983,12 +1013,15 @@ body.category-nav-is-hide:not(.gallery-fullscreen-mode){
     &::before{
         content: "";
         position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
+        left: 50%;
+        top: 50%;
+        width: 1000vw;
+        height: 1000vh;
+        transform: translate(-50%, -50%);
         z-index: 5;
     }
+
+    
 }
 
 
@@ -1012,6 +1045,7 @@ body.category-nav-is-hide:not(.gallery-fullscreen-mode){
     }
     .tooltip-window-trigger {
         opacity: 0 !important;
+        display: none !important;
     }
     .metagallery-item-viewer__caption-container{
         display: none;

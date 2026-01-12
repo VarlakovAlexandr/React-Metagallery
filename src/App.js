@@ -11,6 +11,7 @@ import { animate, createScope } from 'animejs';
 
 import 'swiper/css';
 
+
 function App() {
     let newPostLoad = [];
 
@@ -663,7 +664,9 @@ function App() {
             }
             
             const data = await fetchMediaGallery(params);
+
             
+            console.log(data);
             if (!data.success) {
                 throw new Error('Failed to load data');
             }

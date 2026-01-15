@@ -1,7 +1,7 @@
 import { useState, useLayoutEffect, useRef, useCallback, useEffect } from "react";
 import { Range, Direction } from "react-range";
 import { animate, createScope } from 'animejs';
-
+import { nanoid } from 'nanoid';
 
 function calculateFittingSize(containerWidth, containerHeight, imageWidth, imageHeight) {
     if (!containerWidth || !containerHeight) return { width: 0, height: 0 };
@@ -54,9 +54,6 @@ function ViewerMedia({ media, mediaIndex, mediaList, onClose, onTooltipClick, ac
 
     /*РАБОТАЕМ С ЗУМОМ*/
 
-
-    console.log( 'mediaList' );
-    console.log( mediaList );
 
 
 
@@ -889,7 +886,8 @@ function ViewerMedia({ media, mediaIndex, mediaList, onClose, onTooltipClick, ac
 
             return (
             <button
-                key={`${mediaList[currentIndex].id}-${tooltip.id}`}
+                
+                key={`${nanoid()}-${mediaList[currentIndex].id}-${tooltip.id}`}                
                 className={tooltipClass}
                 style={{
                 left: `${tooltip.x}%`,

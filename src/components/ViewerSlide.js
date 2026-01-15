@@ -6,11 +6,12 @@ import React, {
     useCallback,
     useEffect,
     lazy,
+    useMemo
 } from 'react';
 
 import { animate, createScope } from 'animejs';
 import { calculateFittingSize } from '../utils/calculateFittingSize';
-
+import { nanoid } from 'nanoid';
 
 
 
@@ -51,7 +52,51 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
      * Проверка, что caption обрезан (клонированный блок выше видимого)
      */
 
+    // Добавляем ref для контейнера
+    const mainContainerRef = useRef(null);
 
+    
+    
+    // Добавляем обработчик wheel
+    useEffect(() => {
+        const container = mainContainerRef.current;
+        if (!container) return;
+
+        const handleWheel = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const swiper = getSwiper?.();
+            if (!swiper || !swiper.zoom) return;
+            
+            // Получаем текущий масштаб
+            const currentZoom = swiper.zoom.scale || 1;
+            
+            // Определяем направление прокрутки
+            const isZoomIn = e.deltaY < 0; // Прокрутка вверх - увеличение
+            
+            // Вычисляем новый масштаб
+            let newZoom;
+            if (isZoomIn) {
+                newZoom = Math.min(currentZoom + 0.1, 3.1); // MAX_ZOOM = 3.1
+            } else {
+                newZoom = Math.max(currentZoom - 0.1, 1); // MIN_ZOOM = 1
+            }
+            
+            // Применяем зум
+            if (newZoom > 1) {
+                swiper.zoom.in(newZoom);
+            } else {
+                swiper.zoom.out();
+            }
+        };
+
+        container.addEventListener('wheel', handleWheel, { passive: false });
+        
+        return () => {
+            container.removeEventListener('wheel', handleWheel);
+        };
+    }, [getSwiper]);
     
     const handleTooltipClick = (tooltipData, event) => {
         event.stopPropagation();
@@ -492,6 +537,11 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
 
     const isTooltipHighlighted = (tooltipId) => {
         if (!hoveredTooltipId) return '';
+
+        const screenWidth = document.documentElement.clientWidth;
+        
+        if (screenWidth < 992) return;
+
         return hoveredTooltipId === tooltipId ? 'active-hov' : 'disabled-hov';
     };
 
@@ -517,7 +567,11 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
         return (
             <div
                 className="metagallery-item-viewer__img-main-container"
-                ref={containerRef}
+                ref={(node) => {
+                    // Исправляем: mainContainerRef должен указывать на этот контейнер
+                    containerRef.current = node;
+                    mainContainerRef.current = node;
+                }}
                 style={{ position: 'relative' }}
             >
                 {/* Swiper zoom контейнер */}
@@ -563,7 +617,11 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
                 {/* Пины: отдельный overlay-слой, совпадает по размерам с viewport */}
                 <div
                     className="metagallery-item-viewer__outer-img-container"
-                    ref={pinsOverlayRef}
+                    ref={(node) => {
+                        // Сохраняем ссылку на два ref
+                        containerRef.current = node;
+                        mainContainerRef.current = node;
+                    }}
                     style={{
                         pointerEvents: 'none',
                         position: 'absolute',
@@ -579,12 +637,9 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
                         const isActive = isTooltipActive(tooltip.id);
                         const tooltipClass = `tooltip-window-trigger ${isActive ? 'active' : highlightedClass || ''}`;
 
-                        
-
-
                         return (
                             <button
-                                key={`${media.id}-${tooltip.id}`}
+                                
                                 className={tooltipClass}
                                 style={{
                                     left: `${tooltip.x}%`,
@@ -617,6 +672,8 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
             </div>
         );
     };
+
+
 
     /*
      * Рендер Zoom Slider (без логики изменения масштаба — она у Swiper)
@@ -965,7 +1022,7 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
                             <a
                                 className="metagallery-item-viewer-product-card"
                                 href={tooltip.link}
-                                key={tooltip.id}
+                                
                                 onMouseEnter={() => handleCardMouseEnter(tooltip.id)}
                                 onMouseLeave={handleCardMouseLeave}
                                 onClick={handleCardClick}

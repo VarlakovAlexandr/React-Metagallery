@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+//GalleryItem.js
+import { useEffect, useState, memo } from "react";
 import ViewerSlider from "./ViewerSlider";
 import { isMobile, isTablet, isDesktop } from 'react-device-detect';
-
+import { nanoid } from 'nanoid';
 
 function GalleryItem({ media, baseWidth, onTooltipClick, activeTooltip, mediaList, mediaIndex, itemsShownText, handleTooltipClose }) {
     
@@ -66,7 +67,7 @@ function GalleryItem({ media, baseWidth, onTooltipClick, activeTooltip, mediaLis
             adminBar.style.display = 'block';
         }
     };
-
+    
     return (
         <>
             <div 
@@ -77,6 +78,7 @@ function GalleryItem({ media, baseWidth, onTooltipClick, activeTooltip, mediaLis
                     width: `${baseWidth}px`,
                     position: 'absolute'
                 }}
+                
                 onClick={openViewer}
             >
                 { media.type_media === 'Image' ? (
@@ -122,7 +124,7 @@ function GalleryItem({ media, baseWidth, onTooltipClick, activeTooltip, mediaLis
                 
                 {(media.tooltips && isDesktop) && media.tooltips.map((tooltip) => (
                     <button
-                        key={`${media.id}-${tooltip.id}`}
+                        key={`${media.id}-tooltip-${tooltip.id}`}
                         className={`tooltip-window-trigger ${isTooltipActive(tooltip.id) ? 'active' : ''}`}
                         style={{
                             left: `${tooltip.x}%`,
@@ -157,4 +159,16 @@ function GalleryItem({ media, baseWidth, onTooltipClick, activeTooltip, mediaLis
     );
 }
 
-export default GalleryItem;
+//export default GalleryItem;
+
+// Сравниваем только необходимые пропсы
+const areEqual = (prevProps, nextProps) => {
+    return (
+        prevProps.media.id === nextProps.media.id &&
+        prevProps.baseWidth === nextProps.baseWidth &&
+        prevProps.activeTooltip?.mediaId === nextProps.activeTooltip?.mediaId &&
+        prevProps.activeTooltip?.tooltipData?.id === nextProps.activeTooltip?.tooltipData?.id
+    );
+};
+
+export default memo(GalleryItem, areEqual);

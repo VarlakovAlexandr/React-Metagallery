@@ -1,3 +1,4 @@
+//App.js
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 import GalleryGrid from './components/GalleryGrid';
@@ -315,12 +316,19 @@ function App() {
 
     const handleTooltipOpen = useCallback((tooltipData, triggerElement, mediaId) => {
 
-        const testViewerCalled = triggerElement.closest('.metagallery-item-viewer__slide-root')
 
-        setIsViewerCaller(testViewerCalled);
+       if ( triggerElement ) {
+            const testViewerCalled = triggerElement.closest('.metagallery-item-viewer__slide-root')
+            setIsViewerCaller(testViewerCalled);
+       }
+        
+
+        
 
         // 1. Явное закрытие (onTooltipClick(null, ...))
         if (!tooltipData) {
+            
+
             if (!activeTooltip) return;
             setTooltipPhase('closing');
             setShowFog(false);
@@ -329,6 +337,7 @@ function App() {
 
         // 2. Нет активного — обычное открытие
         if (!activeTooltip) {
+            
             setActiveTooltip({ tooltipData, triggerElement, mediaId });
             setTooltipPhase('opening');
             if (window.innerWidth < 992) setShowFog(true);
@@ -339,8 +348,11 @@ function App() {
             activeTooltip.tooltipData.id === tooltipData.id &&
             activeTooltip.mediaId === mediaId;
 
+        
+
         // 3. Клик по тому же — закрываем
         if (isSame) {
+            
             setTooltipPhase('closing');
             setShowFog(false);
             return;
@@ -349,6 +361,7 @@ function App() {
         // 4. Клик по другому — переключение
         setPendingTooltip({ tooltipData, triggerElement, mediaId });
         setTooltipPhase('switching');
+        
         if (window.innerWidth < 992) setShowFog(true);
     }, [activeTooltip]);
 
@@ -444,7 +457,7 @@ function App() {
     }, [activeTooltip, handleTooltipClose]);
 
     // ФУНКЦИИ ДЛЯ ПАГИНАЦИИ
-    const loadMoreData = async () => {
+    /*const loadMoreData = async () => {
         if (isLoadingMore || !hasMore) return;
         
         setIsLoadingMore(true);
@@ -497,16 +510,83 @@ function App() {
                 setForceLoader(false);
             }, remainingTime);
         }
+    };*/
+
+    // App.js - ИСПРАВЛЕННАЯ ФУНКЦИЯ loadMoreData
+
+
+    const loadMoreData = async () => {
+        if (isLoadingMore || !hasMore) return;
+        
+        setIsLoadingMore(true);
+        
+        const startTime = Date.now();
+        const MIN_LOADER_TIME = 300;
+        
+        try {
+            const params = {
+                group: selectedTaxonomies.group?.slug || '',
+                product_type: selectedTaxonomies.product_type?.slug || '',
+                offset: mediaList.length
+            };
+
+            if (window.innerWidth < 500) {
+                params['img-size'] = 'medium';
+            }
+            
+            const data = await fetchMediaGallery(params);
+            
+            if (!data.success) {
+                throw new Error('Failed to load more data');
+            }
+            
+            const newPosts = data.posts || [];
+            
+            // Создаем новый массив с уже существующими данными
+            const allPosts = [...mediaList, ...newPosts];
+            
+            let updatedPosts;
+            if (document.documentElement.clientWidth >= 992) {
+                updatedPosts = placementElements3Col(
+                    [...allPosts], 
+                    getBaseGap(), 
+                    getBaseWidth(),
+                    data.posts_count || 0 // Передаем общее количество постов
+                );
+            } else {
+                updatedPosts = placementElements2Col(
+                    [...allPosts], 
+                    getBaseGap(), 
+                    getBaseWidth(),
+                    data.posts_count || 0 // Передаем общее количество постов
+                );
+            }
+            
+            // Обновляем состояние
+            setMediaList(updatedPosts);
+            setHasMore(allPosts.length < (data.posts_count || 0));
+            
+        } catch (error) {
+            console.error('Ошибка загрузки данных:', error);
+        } finally {
+            const elapsedTime = Date.now() - startTime;
+            const remainingTime = Math.max(0, MIN_LOADER_TIME - elapsedTime);
+            
+            setTimeout(() => {
+                setIsLoadingMore(false);
+                setForceLoader(false);
+            }, remainingTime);
+        }
     };
+
+
 
     // ФУНКЦИИ ДЛЯ РАСЧЕТА ГРИДА
     const calculateImageHeight = (initialWidth, initialHeight, baseWidth) => {
         return (baseWidth * initialHeight) / initialWidth;
     }
 
-    const placementElements3Col = (posts, gap, baseWidth) => {
-
-        
+    const placementElements3Col = (posts, gap, baseWidth, totalPostsCount = 0) => {
         let colHeights = [0, 0, 0];
         let updatedPosts = posts.map(post => ({...post}));
 
@@ -522,9 +602,6 @@ function App() {
                 const heightB = calculateImageHeight(b.width, b.height, baseWidth);
                 return heightB - heightA;
             });
-            
-
-            
 
             const sortedCols = colHeights
                 .map((height, index) => ({ height, index }))
@@ -538,31 +615,20 @@ function App() {
                 post.left = colIndex * (baseWidth + gap);
                 post.top = colHeight;
                 colHeights[colIndex] += calculateImageHeight(post.width, post.height, baseWidth) + gap;
-                
             }
         }
 
-        const totalLoaded = mediaList.length + newPostLoad.length;
-        const isEverythingLoaded = totalLoaded >= postsCount;
+        // ИСПРАВЛЕНИЕ: Правильно определяем, все ли загружено
+        const isEverythingLoaded = totalPostsCount > 0 && posts.length >= totalPostsCount;
         
-        if (hasMore && !isEverythingLoaded) {
-            setGridHeight(Math.min(...colHeights));
-
-        } else {
-
-
-            setGridHeight(Math.max(...colHeights));
-            
-        }
+        // Всегда использовать максимальную высоту для стабильности
+        const finalGridHeight = Math.max(...colHeights);
+        setGridHeight(finalGridHeight);
 
         return updatedPosts;
     }
-
-    const placementElements2Col = (posts, gap, baseWidth) => {
+    const placementElements2Col = (posts, gap, baseWidth, totalPostsCount = 0) => {
         let colHeights = [0, 0];
-
-      
-
         let updatedPosts = posts.map(post => ({...post}));
 
         for (let i = 0; i < updatedPosts.length; i += 2) {
@@ -596,17 +662,16 @@ function App() {
             }
         }
 
-        const totalLoaded = mediaList.length + newPostLoad.length;
-        const isEverythingLoaded = totalLoaded >= postsCount;
+        // ИСПРАВЛЕНИЕ: Правильно определяем, все ли загружено
+        const isEverythingLoaded = totalPostsCount > 0 && posts.length >= totalPostsCount;
         
-        if (hasMore && !isEverythingLoaded) {
-            setGridHeight(Math.min(...colHeights));
-        } else {
-            setGridHeight(Math.max(...colHeights));
-        }
+        // Всегда использовать максимальную высоту для стабильности
+        const finalGridHeight = Math.max(...colHeights);
+        setGridHeight(finalGridHeight);
 
         return updatedPosts;
     }
+
 
     const getBaseGap = () => {
         return document.documentElement.clientWidth >= 744 ? 4 : 6;
@@ -671,6 +736,8 @@ function App() {
             
             if (window.innerWidth < 500) {
                 params['img-size'] = 'medium';
+
+                
             }
             
             const data = await fetchMediaGallery(params);
@@ -735,8 +802,106 @@ function App() {
         }
     };
 
+    const calculateFullscreenPosition = useCallback((triggerElement, tooltipWidth, tooltipHeight) => {
+        const rect = triggerElement.getBoundingClientRect();
+        const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+        const leftDoc = rect.left + scrollLeft;
+        const rightDoc = document.documentElement.clientWidth - leftDoc - triggerElement.offsetWidth;
+        const topDoc = rect.top + scrollTop;
+
+        const topScreenToElem = window.screenY + rect.top;
+        const screenHeight = document.documentElement.clientHeight;
+        const bottomScreenToElem = screenHeight - (window.screenY + rect.bottom);
+
+        const testRightSpace = rightDoc - tooltipWidth - 20;
+        const testCenterXSpace = rightDoc - (tooltipWidth / 2) - 20;
+
+        let xValue = 0;
+        let top = 0;
+        let xSide = 'left';
+        let ySide = 'bottom';
+
+        const headerHeight = 0;
+        let adminBarHeight = 0;
+
+        const testTopSpace = topScreenToElem - headerHeight - adminBarHeight - tooltipHeight - triggerElement.offsetHeight - 10;
+        const testBottomSpace = bottomScreenToElem - tooltipHeight - triggerElement.offsetHeight - 10;
+        const testCenterSpaceOfTop = topScreenToElem - headerHeight - adminBarHeight - (tooltipHeight / 2) - 5;
+        const testCenterSpaceOfBottom = bottomScreenToElem - (tooltipHeight / 2) - 5;
+
+        if (testCenterSpaceOfTop > 0 && testCenterSpaceOfBottom > 0 && xSide !== 'center') {
+            top = (topDoc - (tooltipHeight / 2) - 5);
+            ySide = 'center';
+        } else if (testTopSpace > 30) {
+            top = (topDoc - tooltipHeight - 10);
+            ySide = 'top';
+        } else if (testBottomSpace > 0) {
+            ySide = 'bottom';
+            top = (topDoc + 10 + triggerElement.offsetHeight);
+        } else {
+            ySide = 'optimal';
+            if ((topScreenToElem - headerHeight - adminBarHeight - tooltipHeight - 10) > 0) {
+                top = rect.top + scrollTop - tooltipHeight + triggerElement.offsetHeight + 40;
+            } else {
+                top = (topDoc - topScreenToElem + headerHeight + adminBarHeight + 40);
+            }
+        }
+
+        if (ySide !== 'optimal') {
+            if (testRightSpace > 0) {
+                xValue = leftDoc;
+                xSide = 'left';
+            } else if (testCenterXSpace > 0 && ySide !== 'center') {
+                xValue = (leftDoc - (tooltipWidth / 2) + 10);
+                xSide = 'center';
+            } else {
+                xValue = rightDoc;
+                xSide = 'right';
+            }
+        } else {
+            if (testRightSpace > 0) {
+                xValue = leftDoc;
+                xSide = 'left';
+            } else {
+                xValue = rightDoc;
+                xSide = 'right';
+            }
+        }
+
+        const positionStyles = {
+            top: `${top}px`
+        };
+
+        if (ySide === 'optimal') {
+            if (xSide === 'right') {
+                positionStyles.right = `${xValue + triggerElement.offsetWidth + 10}px`;
+            } else {
+                positionStyles.left = `${xValue + triggerElement.offsetWidth + 10}px`;
+            }
+        } else {
+            if (xSide === 'right') {
+                positionStyles.right = `${xValue}px`;
+                if (ySide === 'center') {
+                    positionStyles.right = `${xValue + triggerElement.offsetWidth + 10}px`;
+                }
+            } else {
+                if (ySide === 'center') {
+                    positionStyles.left = `${xValue + triggerElement.offsetWidth + 10}px`;
+                } else {
+                    positionStyles.left = `${xValue}px`;
+                }
+            }
+        }
+
+        return positionStyles;
+    }, []);
+
     // РАСЧЕТ ПОЗИЦИИ ТУЛТИПА
     const calculateTooltipPosition = useCallback((triggerElement, tooltipWidth, tooltipHeight) => {
+        
+
         if (!triggerElement) return {};
         
         if (window.innerWidth < 992) {
@@ -852,101 +1017,7 @@ function App() {
         return calculateFullscreenPosition(triggerElement, tooltipWidth, tooltipHeight);
     }, [fullscreenMode]);
 
-    const calculateFullscreenPosition = useCallback((triggerElement, tooltipWidth, tooltipHeight) => {
-        const rect = triggerElement.getBoundingClientRect();
-        const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
 
-        const leftDoc = rect.left + scrollLeft;
-        const rightDoc = document.documentElement.clientWidth - leftDoc - triggerElement.offsetWidth;
-        const topDoc = rect.top + scrollTop;
-
-        const topScreenToElem = window.screenY + rect.top;
-        const screenHeight = document.documentElement.clientHeight;
-        const bottomScreenToElem = screenHeight - (window.screenY + rect.bottom);
-
-        const testRightSpace = rightDoc - tooltipWidth - 20;
-        const testCenterXSpace = rightDoc - (tooltipWidth / 2) - 20;
-
-        let xValue = 0;
-        let top = 0;
-        let xSide = 'left';
-        let ySide = 'bottom';
-
-        const headerHeight = 0;
-        let adminBarHeight = 0;
-
-        const testTopSpace = topScreenToElem - headerHeight - adminBarHeight - tooltipHeight - triggerElement.offsetHeight - 10;
-        const testBottomSpace = bottomScreenToElem - tooltipHeight - triggerElement.offsetHeight - 10;
-        const testCenterSpaceOfTop = topScreenToElem - headerHeight - adminBarHeight - (tooltipHeight / 2) - 5;
-        const testCenterSpaceOfBottom = bottomScreenToElem - (tooltipHeight / 2) - 5;
-
-        if (testCenterSpaceOfTop > 0 && testCenterSpaceOfBottom > 0 && xSide !== 'center') {
-            top = (topDoc - (tooltipHeight / 2) - 5);
-            ySide = 'center';
-        } else if (testTopSpace > 30) {
-            top = (topDoc - tooltipHeight - 10);
-            ySide = 'top';
-        } else if (testBottomSpace > 0) {
-            ySide = 'bottom';
-            top = (topDoc + 10 + triggerElement.offsetHeight);
-        } else {
-            ySide = 'optimal';
-            if ((topScreenToElem - headerHeight - adminBarHeight - tooltipHeight - 10) > 0) {
-                top = rect.top + scrollTop - tooltipHeight + triggerElement.offsetHeight + 40;
-            } else {
-                top = (topDoc - topScreenToElem + headerHeight + adminBarHeight + 40);
-            }
-        }
-
-        if (ySide !== 'optimal') {
-            if (testRightSpace > 0) {
-                xValue = leftDoc;
-                xSide = 'left';
-            } else if (testCenterXSpace > 0 && ySide !== 'center') {
-                xValue = (leftDoc - (tooltipWidth / 2) + 10);
-                xSide = 'center';
-            } else {
-                xValue = rightDoc;
-                xSide = 'right';
-            }
-        } else {
-            if (testRightSpace > 0) {
-                xValue = leftDoc;
-                xSide = 'left';
-            } else {
-                xValue = rightDoc;
-                xSide = 'right';
-            }
-        }
-
-        const positionStyles = {
-            top: `${top}px`
-        };
-
-        if (ySide === 'optimal') {
-            if (xSide === 'right') {
-                positionStyles.right = `${xValue + triggerElement.offsetWidth + 10}px`;
-            } else {
-                positionStyles.left = `${xValue + triggerElement.offsetWidth + 10}px`;
-            }
-        } else {
-            if (xSide === 'right') {
-                positionStyles.right = `${xValue}px`;
-                if (ySide === 'center') {
-                    positionStyles.right = `${xValue + triggerElement.offsetWidth + 10}px`;
-                }
-            } else {
-                if (ySide === 'center') {
-                    positionStyles.left = `${xValue + triggerElement.offsetWidth + 10}px`;
-                } else {
-                    positionStyles.left = `${xValue}px`;
-                }
-            }
-        }
-
-        return positionStyles;
-    }, []);
 
     // ОБРАБОТЧИКИ UI
     const handleToUpScroll = () => {

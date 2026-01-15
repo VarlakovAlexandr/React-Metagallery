@@ -164,13 +164,23 @@ body.gallery-fullscreen-mode{
     -webkit-transition: 300ms linear;
     -o-transition: 300ms linear;
     transition: 300ms linear;
+
+    
 }
 
 .tooltip-window__close {
     background-color: var(--addcolors-deepbrown);
     position: absolute;
-    right: 10px;
-    top: 10px;
+    right: 18px;
+    top: 18px;
+
+    svg{
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+
+    }
 }
 
 @media (min-width: 992px) {
@@ -268,39 +278,41 @@ body.gallery-fullscreen-mode{
 }
 
 .tooltip-window { 
-    -webkit-box-sizing: border-box;
-    box-sizing: border-box;
+    
     position: fixed;
     //display: none;
-    border: 14px solid var(--addcolors-darkbiege-light);
+    
     z-index: 2001;
     background: var(--whites-white);
     max-width: calc(100vw - 40px);
     width: 428px;
-    padding: 20px 6px 32px;
+    
     left: 50%;
     top: 50%;
     /*-webkit-transform: translate(-50%, calc(-50% + 10px));
     -ms-transform: translate(-50%, calc(-50% + 10px));
     transform: translate(-50%, calc(-50% + 10px));*/
     //opacity: 0;
-    -webkit-box-orient: vertical;
-    -webkit-box-direction: normal;
-    -ms-flex-direction: column;
-    flex-direction: column;
-    -webkit-box-align: center;
-    -ms-flex-align: center;
-    align-items: center;
-    row-gap: 12px;
+    
 
     opacity: 0;
     
 }
 
+.tooltip-window__inner{
+    display: flex;    
+    flex-direction: column;    
+    align-items: center;
+    row-gap: 12px;
+    box-sizing: border-box;
+    padding: 20px 6px 32px;
+    border: 14px solid var(--addcolors-darkbiege-light);
+}
+
+
 @media (min-width: 992px) {
     .tooltip-window {
-        row-gap: 24px;
-        padding: 12px 24px 32px;
+        
         position: absolute;
         /*-webkit-transform: translate(0, 10px);
         -ms-transform: translate(0, 10px);
@@ -308,6 +320,11 @@ body.gallery-fullscreen-mode{
         left: unset;
         top: unset;
         z-index: 4000;
+
+        .tooltip-window__inner{
+            row-gap: 24px;
+            padding: 12px 24px 32px;
+        }
     }
 }
 
@@ -442,24 +459,30 @@ body.gallery-fullscreen-mode{
 
 .tooltip-window.viewer-caller{
 
-    .tooltip-window__description{
+    /*.tooltip-window__description{
         display: -webkit-box;
         -webkit-line-clamp: 5; 
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
-    }
+    }*/
 
 
     @media ( min-width: 992px ){
         width: 320px;
-        row-gap: 12px;
-        padding: 20px 6px 32px;
-
         
+
+        .tooltip-window__inner{
+            row-gap: 12px;
+            padding: 20px 12px 12px;
+        }
 
         .tooltip-window__img-block{
             width: 80%;
+        }
+
+        .tooltip-window__description {
+            font-size: 12px;
         }
     }
 }

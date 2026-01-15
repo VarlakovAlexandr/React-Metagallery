@@ -2,9 +2,10 @@
 import React, { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectFade, Zoom, Navigation } from 'swiper/modules';
+
 import ViewerSlide from './ViewerSlide';
 import { Range, Direction } from 'react-range';
-
+import { nanoid } from 'nanoid';
 function ViewerSlider({
     mediaList,
     initialIndex = 0,
@@ -93,12 +94,12 @@ function ViewerSlider({
     }, [zoomValue])
 
     useEffect(() => {
-        document.body.classList.add('media-viewer-open', 'gallery-fullscreen-mode');
-        document.documentElement.classList.add('gallery-fullscreen-mode');
+        //document.body.classList.add('media-viewer-open', 'gallery-fullscreen-mode');
+        //document.documentElement.classList.add('gallery-fullscreen-mode');
 
         return () => {
-            document.body.classList.remove('media-viewer-open', 'gallery-fullscreen-mode');
-            document.documentElement.classList.remove('gallery-fullscreen-mode');
+            //document.body.classList.remove('media-viewer-open', 'gallery-fullscreen-mode');
+            //document.documentElement.classList.remove('gallery-fullscreen-mode');
         };
     }, []);
 
@@ -123,21 +124,24 @@ function ViewerSlider({
         const media = slides[index];
         if (!media || media.type_media !== 'Video') return;
 
+        console.log('Playing video on slide:', index, media.id);
+        
         const swiperEl = document.querySelector('.metagallery-item-viewer__swiper');
         if (!swiperEl) return;
 
-        // Находим все слайды Swiper
+        // Найти ВСЕ слайды с данным индексом (из-за loop могут быть дубли)
         const slideEls = swiperEl.querySelectorAll('.swiper-slide');
-
-        // Учитываем loop: реальный индекс — swiper.realIndex,
-        // а слайды могут дублироваться. Проще пройтись по всем и взять те,
-        // у которых data-swiper-slide-index совпадает.
+        
         slideEls.forEach(slideEl => {
             const slideIndexAttr = slideEl.getAttribute('data-swiper-slide-index');
             if (slideIndexAttr === String(index)) {
                 const videoEl = slideEl.querySelector('video');
                 if (videoEl) {
-                    videoEl.play?.();
+                    // Сбросить и запустить
+                    videoEl.currentTime = 0;
+                    videoEl.play().catch(e => {
+                        console.warn('Video play failed:', e);
+                    });
                 }
             }
         });
@@ -147,23 +151,25 @@ function ViewerSlider({
         const media = slides[index];
         if (!media || media.type_media !== 'Video') return;
 
+        console.log('Pausing video on slide:', index, media.id);
+        
         const swiperEl = document.querySelector('.metagallery-item-viewer__swiper');
         if (!swiperEl) return;
 
         const slideEls = swiperEl.querySelectorAll('.swiper-slide');
-
+        
         slideEls.forEach(slideEl => {
             const slideIndexAttr = slideEl.getAttribute('data-swiper-slide-index');
             if (slideIndexAttr === String(index)) {
                 const videoEl = slideEl.querySelector('video');
                 if (videoEl) {
-                    videoEl.pause?.();
-                    // по желанию можно сбрасывать позицию:
-                    // videoEl.currentTime = 0;
+                    videoEl.pause();
+                    videoEl.currentTime = 0; // Опционально: сбросить на начало
                 }
             }
         });
     }, [slides]);
+
 
     const isCurrentImage = useMemo(() => {
         const media = slides[currentIndex];
@@ -279,59 +285,99 @@ function ViewerSlider({
                 )
             }
             
-            <Swiper
-                modules={[EffectFade, Zoom, Navigation]}
-                effect="fade"
-                loop={true}
-                zoom={{ maxRatio: 3, minRatio: 1 }}
-                initialSlide={initialIndex}
-                onSwiper={(swiper) => { swiperRef.current = swiper; }}
-                onSlideChange={(swiper) => {
-                    const newIndex = swiper.realIndex;
-                    const prevIndex = prevIndexRef.current;
+        <Swiper
+            modules={[EffectFade, Zoom, Navigation]}
+            effect="fade"
+            fadeEffect={{
+                crossFade: true 
+            }}
+            loop={true} 
+            zoom={{ maxRatio: 3, minRatio: 1 }}
+            initialSlide={initialIndex}
+            observer={true}
+            observeParents={true}
+            observeSlideChildren={true}
+            onInit={(swiper) => {
+                console.log('Swiper initialized, updating...');
+                swiper.update();
+                
+                // Запустить видео на начальном слайде
+                const initialMedia = slides[initialIndex];
+                if (initialMedia && initialMedia.type_media === 'Video') {
+                    playVideoOnSlide(initialIndex);
+                }
+            }}
+            onSwiper={(swiper) => { 
+                swiperRef.current = swiper; 
+            }}
+            onSlideChange={(swiper) => {
+                const newIndex = swiper.realIndex;
+                const prevIndex = prevIndexRef.current;
+                
+                console.log('Slide change:', { prevIndex, newIndex });
 
-                    // Зум‑логика как была
-                    setCurrentIndex(newIndex);
-                    setZoomValue(1);
-                    swiper.zoom?.out?.();
+                // Зум‑логика
+                setCurrentIndex(newIndex);
+                setZoomValue(1);
+                swiper.zoom?.out?.();
 
-                    // 1) Поставить на паузу видео на старом слайде
-                    if (prevIndex !== null && prevIndex !== undefined) {
-                        pauseVideoOnSlide(prevIndex);
-                    }
+                // 1) Поставить на паузу видео на ПРЕДЫДУЩЕМ слайде
+                if (prevIndex !== null && prevIndex !== undefined) {
+                    pauseVideoOnSlide(prevIndex);
+                }
 
-                    // 2) Запустить видео на новом слайде
+                // 2) Запустить видео на НОВОМ слайде (если это видео)
+                const newMedia = slides[newIndex];
+                if (newMedia && newMedia.type_media === 'Video') {
                     playVideoOnSlide(newIndex);
+                }
 
-                    // 3) Обновить prevIndex
-                    prevIndexRef.current = newIndex;
-                }}
-                className="metagallery-item-viewer__swiper"
-                allowTouchMove={false}
-                navigation={{
-                    prevEl: '.viewer-prev',
-                    nextEl: '.viewer-next',
-                }}
-            >
-                {slides.map((media, index) => (
-                    <SwiperSlide key={media.id}>
-                        <ViewerSlide
-                            media={media}
-                            mediaIndex={index}
-                            mediaList={slides}
-                            activeTooltip={activeTooltip}
-                            onTooltipClick={onTooltipClick}
-                            getSwiper={() => swiperRef.current}
-                            isZoomed={zoomValue > 1}
-                            itemsShownText = { itemsShownText }
-                        />
-                    </SwiperSlide>
-                ))}
-            </Swiper>
+                // 3) Обновить prevIndex
+                prevIndexRef.current = newIndex;
+            }}
+            // ДОБАВИТЬ: обработчик при закрытии/размонтировании
+            onBeforeDestroy={(swiper) => {
+                // Поставить на паузу все видео при закрытии просмотрщика
+                slides.forEach((media, index) => {
+                    if (media.type_media === 'Video') {
+                        pauseVideoOnSlide(index);
+                    }
+                });
+            }}
+            className="metagallery-item-viewer__swiper"
+            allowTouchMove={true} // Начальное значение
+            breakpoints={{
+                992: {
+                    allowTouchMove: false // Для экранов 992px и шире
+                }
+            }}
+            navigation={{
+                prevEl: '.viewer-prev',
+                nextEl: '.viewer-next',
+            }}
+        >
+            {slides.map((media, index) => (
+                <SwiperSlide 
+                    key={`swiper_slide_${media.id}_${index}`}>
+                    <ViewerSlide
+                        media={media}
+                        mediaIndex={index}
+                        mediaList={slides}
+                        activeTooltip={activeTooltip}
+                        onTooltipClick={onTooltipClick}
+                        getSwiper={() => swiperRef.current}
+                        isZoomed={zoomValue > 1}
+                        itemsShownText={itemsShownText}
+                    />
+                </SwiperSlide>
+            ))}
+        </Swiper>
 
-        </div>
-    );
-}
+
+
+            </div>
+        );
+    }
 
                 
 export default ViewerSlider;

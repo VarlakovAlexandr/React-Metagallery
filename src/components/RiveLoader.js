@@ -12,7 +12,7 @@ function RiveLoader({ isLoading }) {
         stateMachines: "State Machine 1",
         autoplay: true,
         onLoad: () => {
-            console.log('Rive animation loaded');
+           //console.log('Rive animation loaded');
         },
         onLoadError: (error) => {
             console.error('Rive load error:', error);

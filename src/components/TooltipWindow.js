@@ -1,3 +1,5 @@
+//TooltipWindow.js
+
 import React, { useState, useEffect, useRef } from 'react';
 import { animate, createScope } from 'animejs';
 
@@ -33,7 +35,7 @@ function TooltipWindow({
             
             self.add('closeTooltip', (callback) => {
                 const targets = document.querySelectorAll('.tooltip-window.closing');
-                console.log('CLOSE targets length =', targets.length, targets);
+                //console.log('CLOSE targets length =', targets.length, targets);
 
                 animate('.tooltip-window.closing', { 
                     opacity: [1, 0.2],
@@ -42,12 +44,10 @@ function TooltipWindow({
                     duration: 200,
                     onUpdate: () => {
                         const t = document.querySelector('.tooltip-window.closing');
-                        if (t) {
-                            console.log('CLOSE UPDATE', t.style.opacity, t.style.transform);
-                        }
+                        
                     },
                     onComplete: () => {
-                        console.log('ANIME closeTooltip complete');
+                        
                         if (typeof callback === 'function') {
                             callback();
                         }
@@ -63,12 +63,7 @@ function TooltipWindow({
 
     // Лог для контроля фаз
     useEffect(() => {
-        console.log(
-            '[TooltipWindow] phase:', phase,
-            'isActive:', isActive,
-            'isMeasured:', isMeasured,
-            'tooltipData:', !!tooltipData
-        );
+        
     }, [phase, isActive, isMeasured, tooltipData]);
 
     // Сброс измерения при смене данных
@@ -109,10 +104,10 @@ function TooltipWindow({
         if (!isMeasured) return;
         if (!tooltipScope.current) return;
 
-        // интересуют только эти фазы
+        
         if (phase !== 'opening' && phase !== 'closing' && phase !== 'switching') return;
 
-        console.log('[TooltipWindow] run animation, phase:', phase);
+        
 
         const el = tooltipRef.current;
 
@@ -153,30 +148,34 @@ function TooltipWindow({
                     : { visibility: 'hidden', left: 0, top: 0 }
             }
         >
-            <button className="tooltip-window__close" onClick={onClose}>
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M0.887236 2.11276L2.0417 0.958304L9.11276 8.02937L7.9583 9.18383L0.887236 2.11276ZM7.9159 0.915904L9.15516 2.15516L2.0841 9.22623L0.844837 7.98697L7.9159 0.915904Z" fill="#FAF8ED"></path>
-                </svg>
-            </button>
+            <div className="tooltip-window__inner">
+                <button className="tooltip-window__close" onClick={onClose}>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0.887236 2.11276L2.0417 0.958304L9.11276 8.02937L7.9583 9.18383L0.887236 2.11276ZM7.9159 0.915904L9.15516 2.15516L2.0841 9.22623L0.844837 7.98697L7.9159 0.915904Z" fill="#FAF8ED"></path>
+                    </svg>
+                </button>
 
-            <div className="tooltip-window__img-block">
-                <img src={tooltipData.image} key={tooltipData.image} alt={tooltipData.title} />
+                <div className="tooltip-window__img-block">
+                    <img src={tooltipData.image} key={tooltipData.image} alt={tooltipData.title} />
+                </div>
+                
+                <div className="tooltip-window__description-block">
+                    <p className="tooltip-window__title">{tooltipData.title}</p>
+                    <p className="tooltip-window__price">{tooltipData.price}</p>
+                    <p className="tooltip-window__description">{tooltipData.description}</p>
+                </div>
+                
+                <a 
+                    href={tooltipData.link} 
+                    className="btn btn-outline-dark"
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                >
+                    {tooltipData.link_text || 'View item'}
+                </a>
             </div>
+
             
-            <div className="tooltip-window__description-block">
-                <p className="tooltip-window__title">{tooltipData.title}</p>
-                <p className="tooltip-window__price">{tooltipData.price}</p>
-                <p className="tooltip-window__description">{tooltipData.description}</p>
-            </div>
-            
-            <a 
-                href={tooltipData.link} 
-                className="btn btn-outline-dark"
-                target="_blank" 
-                rel="noopener noreferrer"
-            >
-                {tooltipData.link_text || 'View item'}
-            </a>
         </div>
     );
 }

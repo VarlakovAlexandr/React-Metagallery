@@ -1,5 +1,5 @@
 // ViewerSlider.jsx
-import React, { useEffect, useCallback, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useCallback, useRef, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { EffectFade, Zoom, Navigation } from 'swiper/modules';
 
@@ -8,7 +8,7 @@ import { Range, Direction } from 'react-range';
 import { nanoid } from 'nanoid';
 function ViewerSlider({
     mediaList,
-    initialIndex = 0,
+    initialMediaId,
     onClose,
     activeTooltip,
     onTooltipClick,
@@ -19,16 +19,35 @@ function ViewerSlider({
     const MAX_ZOOM = 3.1;
     const STEP_ZOOM = 0.1;
 
-    const [currentIndex, setCurrentIndex] = useState(initialIndex);
+    const initialIndex = mediaList.findIndex(m => {
+        const mediaId = String(m.id);
+        const targetId = String(initialMediaId);
+        
+        return mediaId === targetId;
+    });
+
+    
+
+    // Если не нашли, ищем по строгому равенству
+    if (initialIndex === -1) {
+        const fallbackIndex = mediaList.findIndex(m => m.id == initialMediaId); // Нестрогое сравнение
+        
+        
+        if (fallbackIndex !== -1) {
+            console.warn('Found with loose comparison - types mismatch!');
+        }
+    }
+
+    const [currentIndex, setCurrentIndex] = useState(
+        initialIndex !== -1 ? initialIndex : 0
+    );
+
+
     const swiperRef = useRef(null);
     const [zoomValue, setZoomValue] = useState(1);
-    const [isZoomed, setIsZoomed] = useState(false); // <-- новое состояние
+    const [isZoomed, setIsZoomed] = useState(false); 
     
     const prevIndexRef = useRef(initialIndex);
-
-
-
-
 
     const handleZoomChange = useCallback((values) => {
         const raw = values[0];
@@ -93,15 +112,7 @@ function ViewerSlider({
         handleTooltipClose();
     }, [zoomValue])
 
-    useEffect(() => {
-        //document.body.classList.add('media-viewer-open', 'gallery-fullscreen-mode');
-        //document.documentElement.classList.add('gallery-fullscreen-mode');
-
-        return () => {
-            //document.body.classList.remove('media-viewer-open', 'gallery-fullscreen-mode');
-            //document.documentElement.classList.remove('gallery-fullscreen-mode');
-        };
-    }, []);
+    
 
     useEffect(() => {
         const swiper = swiperRef.current;
@@ -118,14 +129,13 @@ function ViewerSlider({
         };
     }, []);
 
-    const slides = useMemo(() => mediaList || [], [mediaList]);
+    const slides = mediaList;
 
     const playVideoOnSlide = useCallback((index) => {
         const media = slides[index];
         if (!media || media.type_media !== 'Video') return;
 
-        console.log('Playing video on slide:', index, media.id);
-        
+                
         const swiperEl = document.querySelector('.metagallery-item-viewer__swiper');
         if (!swiperEl) return;
 
@@ -151,7 +161,7 @@ function ViewerSlider({
         const media = slides[index];
         if (!media || media.type_media !== 'Video') return;
 
-        console.log('Pausing video on slide:', index, media.id);
+        
         
         const swiperEl = document.querySelector('.metagallery-item-viewer__swiper');
         if (!swiperEl) return;
@@ -171,10 +181,8 @@ function ViewerSlider({
     }, [slides]);
 
 
-    const isCurrentImage = useMemo(() => {
-        const media = slides[currentIndex];
-        return media && media.type_media === 'Image';
-    }, [slides, currentIndex]);
+    const isCurrentImage = slides?.[currentIndex]?.type_media === 'Image';
+
 
     useEffect(() => {
         // когда компонент смонтировался и слайды известны
@@ -291,14 +299,14 @@ function ViewerSlider({
             fadeEffect={{
                 crossFade: true 
             }}
-            loop={true} 
+            loop={true}
             zoom={{ maxRatio: 3, minRatio: 1 }}
             initialSlide={initialIndex}
             observer={true}
             observeParents={true}
             observeSlideChildren={true}
             onInit={(swiper) => {
-                console.log('Swiper initialized, updating...');
+                
                 swiper.update();
                 
                 // Запустить видео на начальном слайде
@@ -314,7 +322,7 @@ function ViewerSlider({
                 const newIndex = swiper.realIndex;
                 const prevIndex = prevIndexRef.current;
                 
-                console.log('Slide change:', { prevIndex, newIndex });
+                
 
                 // Зум‑логика
                 setCurrentIndex(newIndex);
@@ -356,21 +364,25 @@ function ViewerSlider({
                 nextEl: '.viewer-next',
             }}
         >
-            {slides.map((media, index) => (
-                <SwiperSlide 
-                    key={`swiper_slide_${media.id}_${index}`}>
-                    <ViewerSlide
-                        media={media}
-                        mediaIndex={index}
-                        mediaList={slides}
-                        activeTooltip={activeTooltip}
-                        onTooltipClick={onTooltipClick}
-                        getSwiper={() => swiperRef.current}
-                        isZoomed={zoomValue > 1}
-                        itemsShownText={itemsShownText}
-                    />
-                </SwiperSlide>
-            ))}
+            {slides.map((media, index) => {
+               
+                return (
+                    <SwiperSlide 
+                        key={`swiper_slide_${media.id}_${index}`}>
+                        <ViewerSlide
+                            media={media}
+                            mediaIndex={index}
+                            dataTest={`swiper_slide_${media.id}_${index}`}
+                            mediaList={slides}
+                            activeTooltip={activeTooltip}
+                            onTooltipClick={onTooltipClick}
+                            getSwiper={() => swiperRef.current}
+                            isZoomed={zoomValue > 1}
+                            itemsShownText={itemsShownText}
+                        />
+                    </SwiperSlide>
+                )
+            })}
         </Swiper>
 
 

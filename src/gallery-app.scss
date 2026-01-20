@@ -334,52 +334,11 @@ body.gallery-fullscreen-mode{
     border-color: transparent;
 }
 
-.tooltip-window.activate {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    -webkit-animation: showTooltip 300ms linear forwards;
-    animation: showTooltip 300ms linear forwards;
-}
 
-@media (min-width: 992px) {
-    .tooltip-window.activate {
-        -webkit-animation: showTooltipDesktop 300ms linear forwards;
-        animation: showTooltipDesktop 300ms linear forwards;
-    }
-}
 
-.tooltip-window.active {
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    //opacity: 1;
-    /*-webkit-transform: translate(-50%, -50%);
-    -ms-transform: translate(-50%, -50%);
-    transform: translate(-50%, -50%);*/
-}
 
-@media (min-width: 992px) {
-    .tooltip-window.active {
-        /*-webkit-transform: translate(0, 0);
-        -ms-transform: translate(0, 0);
-        transform: translate(0, 0);*/
 
-        //opacity: 0;
-    }
-}
 
-.tooltip-window.active.deactivate {
-    -webkit-animation: hideTooltip 300ms forwards;
-    animation: hideTooltip 300ms forwards;
-}
-
-@media (min-width: 992px) {
-    .tooltip-window.active.deactivate {
-        -webkit-animation: hideTooltipDesktop 300ms forwards;
-        animation: hideTooltipDesktop 300ms forwards;
-    }
-}
 
 .tooltip-window__img-block { 
     width: 100%;
@@ -592,12 +551,12 @@ body.gallery-fullscreen-mode{
 }
 
 .tooltip-window.measuring {
-    visibility: hidden !important;
-    display: flex !important;
+    /*visibility: hidden !important;*/
+    /*display: flex !important;*/
 }
 
 .tooltip-window.measured {
-    visibility: visible !important;
+    /*visibility: visible !important;*/
 }
 
 .tooltip-window-trigger.active{
@@ -1019,6 +978,8 @@ body.category-nav-is-hide:not(.gallery-fullscreen-mode){
     .swiper-zoom-container{
         padding: 0;
         background: transparent;
+        width: max-content;
+        height: max-content;
     }
 
     .swiper-zoom-target{
@@ -1287,8 +1248,9 @@ body.media-viewer-open{
     display: flex;
     align-items: flex-end;
     justify-content: flex-start;
-    z-index: 50;
-    transition: 200ms linear;
+    z-index: 150;
+    background-color: rgba(255, 255, 255, 0);
+    /*transition: 200ms linear;*/
     @media (min-width: 992px){
         bottom: 10px;
         right: unset;
@@ -1304,6 +1266,20 @@ body.media-viewer-open{
         top: 0;
         display: block;
         z-index: -1;
+    }
+
+    &::after{
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        background-color: white;
+        opacity: 0;
+        transition: 400ms background, 0ms width, 0ms height, 400ms opacity;
     }
 }
 .metagallery-item-viewer-card-container--inner{
@@ -1324,22 +1300,27 @@ body.media-viewer-open{
 }
 .metagallery-item-viewer-card-container.mobile-open{
     width: 100vw;
-    height: 100vh;    
+       
     overflow-y: auto;
     overflow-x: hidden;
-    height: 100vh;
-    max-height: 100vh;
+    
+    
     z-index: 150;
     justify-content: unset;
     align-items: unset;
     height: calc(var(--vh, 1vh) * 100);
+    max-height: calc(var(--vh, 1vh) * 100);
     /*justify-content: flex-start;
     align-items: flex-start;
     flex-direction: row-reverse;
     flex-wrap: wrap-reverse;
     padding: 10px;*/
     //padding-left: calc(100vw - 10px - 206px);
-    background-color: rgba($color: #fff, $alpha: .5);
+    //background-color: rgba(255, 255, 255, 0.5);
+
+    &::after{
+        opacity: 0.5;
+    }
 
     .metagallery-item-viewer-card-container--inner{
         height: max-content;
@@ -1356,13 +1337,14 @@ body.media-viewer-open{
 }
 
 
-/*@supports (height: 100dvh){
+
+
+@supports (height: 100dvh){
     .metagallery-item-viewer-card-container.mobile-open{
-        height: 100svh;
-        min-height: 100dvh;
+        height: 100dvh;        
         max-height: 100dvh;
     }
-}*/
+}
 
 
 .metagallery-item-viewer-product-card{
@@ -1730,4 +1712,12 @@ body.gallery-fullscreen-mode{
     jdiv{
         display: none !important;
     }
+}
+
+.metagallery-item-viewer .swiper-slide.swiper-slide-active  {
+   z-index: 100;
+}
+
+.metagallery-item-viewer .swiper-slide:not(.swiper-slide-active)  {
+   z-index: 1;
 }

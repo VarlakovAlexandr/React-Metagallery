@@ -97,7 +97,7 @@ function App() {
 
 
 
-    // В App.js изменяем эффект для Intersection Observer
+    //  изменяем эффект для Intersection Observer
     useEffect(() => {
         if (!hasMore || isLoadingMore || !loaderRef.current) return ;
         
@@ -178,7 +178,8 @@ function App() {
             }
             
             const data = await response.json();
-            
+
+                        
             // Проверяем структуру ответа
             if (!data || typeof data !== 'object') {
                 throw new Error('Invalid response format');
@@ -297,9 +298,9 @@ function App() {
             }
             
             if (document.documentElement.clientWidth >= 992) {
-                setMediaList(placementElements3Col(shuffledArray, getBaseGap(), getBaseWidth()));
+                setMediaList([...placementElements3Col(shuffledArray, getBaseGap(), getBaseWidth())]);
             } else {
-                setMediaList(placementElements2Col(shuffledArray, getBaseGap(), getBaseWidth()));
+                setMediaList([...placementElements2Col(shuffledArray, getBaseGap(), getBaseWidth())]);
             }
             
             setShuffled(true);
@@ -315,7 +316,7 @@ function App() {
 
 
     const handleTooltipOpen = useCallback((tooltipData, triggerElement, mediaId) => {
-
+        
 
        if ( triggerElement ) {
             const testViewerCalled = triggerElement.closest('.metagallery-item-viewer__slide-root')
@@ -344,9 +345,10 @@ function App() {
             return;
         }
 
-        const isSame =
-            activeTooltip.tooltipData.id === tooltipData.id &&
-            activeTooltip.mediaId === mediaId;
+        const isSame = activeTooltip && 
+                  activeTooltip.tooltipData.id === tooltipData.id && 
+                  activeTooltip.mediaId === mediaId &&
+                  activeTooltip.tooltipData.sourceMediaId === tooltipData.sourceMediaId;
 
         
 
@@ -361,6 +363,7 @@ function App() {
         // 4. Клик по другому — переключение
         setPendingTooltip({ tooltipData, triggerElement, mediaId });
         setTooltipPhase('switching');
+
         
         if (window.innerWidth < 992) setShowFog(true);
     }, [activeTooltip]);
@@ -456,64 +459,9 @@ function App() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, [activeTooltip, handleTooltipClose]);
 
-    // ФУНКЦИИ ДЛЯ ПАГИНАЦИИ
-    /*const loadMoreData = async () => {
-        if (isLoadingMore || !hasMore) return;
-        
-        setIsLoadingMore(true);
-        
-        
-        const startTime = Date.now();
-        const MIN_LOADER_TIME = 300;
-        
-        try {
-            const params = {
-                group: selectedTaxonomies.group?.slug || '',
-                product_type: selectedTaxonomies.product_type?.slug || '',
-                offset: mediaList.length
-            };
+    
 
-            // Добавляем img-size для мобильных
-            if (window.innerWidth < 500) {
-                params['img-size'] = 'medium';
-            }
-            
-            const data = await fetchMediaGallery(params);
-            
-            if (!data.success) {
-                throw new Error('Failed to load more data');
-            }
-            
-            const newPosts = data.posts || [];
-            newPostLoad = [...newPosts];
-            
-            const allPosts = [...mediaList, ...newPosts];
-            
-            let updatedPosts;
-            if (document.documentElement.clientWidth >= 992) {
-                updatedPosts = placementElements3Col([...allPosts], getBaseGap(), getBaseWidth());
-            } else {
-                updatedPosts = placementElements2Col([...allPosts], getBaseGap(), getBaseWidth());
-            }
-            
-            setMediaList(updatedPosts);
-            setHasMore(newPosts.length === 18);
-            
-        } catch (error) {
-            console.error('Ошибка загрузки данных:', error);
-        } finally {
-            const elapsedTime = Date.now() - startTime;
-            const remainingTime = Math.max(0, MIN_LOADER_TIME - elapsedTime);
-            
-            setTimeout(() => {
-                setIsLoadingMore(false);
-                setForceLoader(false);
-            }, remainingTime);
-        }
-    };*/
-
-    // App.js - ИСПРАВЛЕННАЯ ФУНКЦИЯ loadMoreData
-
+    //loadMoreData
 
     const loadMoreData = async () => {
         if (isLoadingMore || !hasMore) return;
@@ -563,7 +511,7 @@ function App() {
             }
             
             // Обновляем состояние
-            setMediaList(updatedPosts);
+            setMediaList([...updatedPosts]);
             setHasMore(allPosts.length < (data.posts_count || 0));
             
         } catch (error) {
@@ -586,9 +534,43 @@ function App() {
         return (baseWidth * initialHeight) / initialWidth;
     }
 
+
+    /**
+     * Функция для размещения элементов в 3 колонки с иммутабельным подходом
+     */
     const placementElements3Col = (posts, gap, baseWidth, totalPostsCount = 0) => {
+        // Создаем полностью новые объекты для каждого поста
+        let updatedPosts = posts.map(post => ({
+            id: post.id,
+            type_media: post.type_media,
+            image: post.image,
+            video: post.video,
+            width: post.width,
+            height: post.height,
+            filesize: post.filesize,
+            video_placeholder: post.video_placeholder,
+            thumbnail: post.thumbnail,
+            caption: post.caption,
+            alt: post.alt,
+            // Глубокое копирование массива tooltips
+            tooltips: post.tooltips ? post.tooltips.map(tip => ({
+                x: tip.x,
+                y: tip.y,
+                test_x: tip.test_x,
+                test_y: tip.test_y,
+                id: tip.id,
+                title: tip.title,
+                price: tip.price,
+                link: tip.link,
+                image: tip.image,
+                description: tip.description,
+                link_text: tip.link_text
+            })) : [],
+            left: 0,
+            top: 0
+        }));
+
         let colHeights = [0, 0, 0];
-        let updatedPosts = posts.map(post => ({...post}));
 
         for (let i = 0; i < updatedPosts.length; i += 3) {
             const group = updatedPosts.slice(i, i + 3);
@@ -597,7 +579,8 @@ function App() {
                 calculateImageHeight(post.width, post.height, baseWidth)
             );
             
-            const sortedGroup = [...group].sort((a, b) => {
+            // Создаем копию группы для сортировки
+            const sortedGroup = group.map(post => ({...post})).sort((a, b) => {
                 const heightA = calculateImageHeight(a.width, a.height, baseWidth);
                 const heightB = calculateImageHeight(b.width, b.height, baseWidth);
                 return heightB - heightA;
@@ -612,24 +595,66 @@ function App() {
                 const colIndex = sortedCols[j].index;
                 const colHeight = colHeights[colIndex];
                 
-                post.left = colIndex * (baseWidth + gap);
-                post.top = colHeight;
-                colHeights[colIndex] += calculateImageHeight(post.width, post.height, baseWidth) + gap;
+                // Находим соответствующий пост в updatedPosts и обновляем его
+                const postIndex = updatedPosts.findIndex(p => p.id === post.id);
+                if (postIndex !== -1) {
+                    updatedPosts[postIndex].left = colIndex * (baseWidth + gap);
+                    updatedPosts[postIndex].top = colHeight;
+                    colHeights[colIndex] += calculateImageHeight(
+                        updatedPosts[postIndex].width, 
+                        updatedPosts[postIndex].height, 
+                        baseWidth
+                    ) + gap;
+                }
             }
         }
 
-        // ИСПРАВЛЕНИЕ: Правильно определяем, все ли загружено
+        // Определяем, все ли загружено
         const isEverythingLoaded = totalPostsCount > 0 && posts.length >= totalPostsCount;
         
-        // Всегда использовать максимальную высоту для стабильности
+        // Используем максимальную высоту для стабильности
         const finalGridHeight = Math.max(...colHeights);
         setGridHeight(finalGridHeight);
 
         return updatedPosts;
-    }
+    };
+
+    /**
+     * Функция для размещения элементов в 2 колонки с иммутабельным подходом
+     */
     const placementElements2Col = (posts, gap, baseWidth, totalPostsCount = 0) => {
+        // Создаем полностью новые объекты для каждого поста
+        let updatedPosts = posts.map(post => ({
+            id: post.id,
+            type_media: post.type_media,
+            image: post.image,
+            video: post.video,
+            width: post.width,
+            height: post.height,
+            filesize: post.filesize,
+            video_placeholder: post.video_placeholder,
+            thumbnail: post.thumbnail,
+            caption: post.caption,
+            alt: post.alt,
+            // Глубокое копирование массива tooltips
+            tooltips: post.tooltips ? post.tooltips.map(tip => ({
+                x: tip.x,
+                y: tip.y,
+                test_x: tip.test_x,
+                test_y: tip.test_y,
+                id: tip.id,
+                title: tip.title,
+                price: tip.price,
+                link: tip.link,
+                image: tip.image,
+                description: tip.description,
+                link_text: tip.link_text
+            })) : [],
+            left: 0,
+            top: 0
+        }));
+
         let colHeights = [0, 0];
-        let updatedPosts = posts.map(post => ({...post}));
 
         for (let i = 0; i < updatedPosts.length; i += 2) {
             const group = updatedPosts.slice(i, i + 2);
@@ -646,31 +671,48 @@ function App() {
                     .map((height, index) => ({ height, index }))
                     .sort((a, b) => a.height - b.height);
                 
-                group[higherIndex].left = sortedCols[0].index * (baseWidth + gap);
-                group[higherIndex].top = sortedCols[0].height;
-                colHeights[sortedCols[0].index] += heights[higherIndex] + gap;
+                // Обновляем первый пост (более высокий)
+                const higherPostIndex = updatedPosts.findIndex(p => p.id === group[higherIndex].id);
+                if (higherPostIndex !== -1) {
+                    updatedPosts[higherPostIndex].left = sortedCols[0].index * (baseWidth + gap);
+                    updatedPosts[higherPostIndex].top = sortedCols[0].height;
+                    colHeights[sortedCols[0].index] += heights[higherIndex] + gap;
+                }
                 
-                group[lowerIndex].left = sortedCols[1].index * (baseWidth + gap);
-                group[lowerIndex].top = sortedCols[1].height;
-                colHeights[sortedCols[1].index] += heights[lowerIndex] + gap;
+                // Обновляем второй пост (более низкий)
+                const lowerPostIndex = updatedPosts.findIndex(p => p.id === group[lowerIndex].id);
+                if (lowerPostIndex !== -1) {
+                    updatedPosts[lowerPostIndex].left = sortedCols[1].index * (baseWidth + gap);
+                    updatedPosts[lowerPostIndex].top = sortedCols[1].height;
+                    colHeights[sortedCols[1].index] += heights[lowerIndex] + gap;
+                }
             } else {
+                // Один элемент в группе
                 const post = group[0];
                 const minHeightIndex = colHeights.indexOf(Math.min(...colHeights));
-                post.left = minHeightIndex * (baseWidth + gap);
-                post.top = colHeights[minHeightIndex];
-                colHeights[minHeightIndex] += calculateImageHeight(post.width, post.height, baseWidth) + gap;
+                const postIndex = updatedPosts.findIndex(p => p.id === post.id);
+                
+                if (postIndex !== -1) {
+                    updatedPosts[postIndex].left = minHeightIndex * (baseWidth + gap);
+                    updatedPosts[postIndex].top = colHeights[minHeightIndex];
+                    colHeights[minHeightIndex] += calculateImageHeight(
+                        updatedPosts[postIndex].width, 
+                        updatedPosts[postIndex].height, 
+                        baseWidth
+                    ) + gap;
+                }
             }
         }
 
-        // ИСПРАВЛЕНИЕ: Правильно определяем, все ли загружено
+        // Определяем, все ли загружено
         const isEverythingLoaded = totalPostsCount > 0 && posts.length >= totalPostsCount;
         
-        // Всегда использовать максимальную высоту для стабильности
+        // Используем максимальную высоту для стабильности
         const finalGridHeight = Math.max(...colHeights);
         setGridHeight(finalGridHeight);
 
         return updatedPosts;
-    }
+    };
 
 
     const getBaseGap = () => {
@@ -705,9 +747,9 @@ function App() {
         
         if (mediaList && mediaList.length > 0) {            
             if (document.documentElement.clientWidth >= 992) {
-                setMediaList(placementElements3Col(mediaList, getBaseGap(), getBaseWidth()));
+                setMediaList([...placementElements3Col(mediaList, getBaseGap(), getBaseWidth())]);
             } else {
-                setMediaList(placementElements2Col(mediaList, getBaseGap(), getBaseWidth()));
+                setMediaList([...placementElements2Col(mediaList, getBaseGap(), getBaseWidth())]);
             }
         }
     }, [mediaList]);
@@ -779,9 +821,9 @@ function App() {
             setFilteredPostsCount(data.posts_count || 0);
             
             if (document.documentElement.clientWidth >= 992) {
-                setMediaList(placementElements3Col(posts, getBaseGap(), getBaseWidth()));
+                setMediaList([...placementElements3Col(posts, getBaseGap(), getBaseWidth())]);
             } else {
-                setMediaList(placementElements2Col(posts, getBaseGap(), getBaseWidth()));
+                setMediaList([...placementElements2Col(posts, getBaseGap(), getBaseWidth())]);
             }
             
             setHasMore(posts.length < data.posts_count);
@@ -1017,8 +1059,6 @@ function App() {
         return calculateFullscreenPosition(triggerElement, tooltipWidth, tooltipHeight);
     }, [fullscreenMode]);
 
-
-
     // ОБРАБОТЧИКИ UI
     const handleToUpScroll = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1157,6 +1197,9 @@ function App() {
                         label: 'Product'
                     }))
                 ];
+
+
+
 
                 setLoadBtnText(data.load_btn_text);
                 setLoadBtnTextLoading(data.load_btn_text_loading);
@@ -1313,9 +1356,9 @@ function App() {
                     
                 </div> 
                 <TooltipFog 
-                        isActive={showFog}
-                        onClose={handleTooltipClose}
-                    />
+                    isActive={showFog}
+                    onClose={handleTooltipClose}
+                />
 
                         
                 <TooltipWindow
@@ -1329,12 +1372,7 @@ function App() {
                     onAnimationOpenEnd={handleTooltipAnimationOpenEnd}
                     calculatePosition={calculateTooltipPosition}
                 />
-            </div>
-
-
-            
-                
-            
+            </div>            
         </>
     );
 }

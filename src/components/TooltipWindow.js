@@ -19,24 +19,38 @@ function TooltipWindow({
     const [finalPosition, setFinalPosition] = useState({});
     const tooltipScope = useRef(null);
 
+    const [animationStart, setAnimationStart] = useState(false);
+    const [animationClosetooltip, setAnimationClosetooltip] = useState(false);
+
+    
+
+
     // init scope
     useEffect(() => {
         tooltipScope.current = createScope({ tooltipRef }).add(self => {
             self.add('showTooltip', () => {
                 // открытие анимирует .tooltip-window.active
+                
+                setAnimationStart(true);
+                
+                
+
                 animate('.tooltip-window.active', { 
                     delay: 100,
                     opacity: [0, 1],                    
                     y: [20, 0],
                     ease: 'linear',
                     duration: 200,
+
+                    onComplete: () => {
+                        setAnimationStart(false);
+                    }
                 });
             });
             
             self.add('closeTooltip', (callback) => {
                 const targets = document.querySelectorAll('.tooltip-window.closing');
-                //console.log('CLOSE targets length =', targets.length, targets);
-
+                
                 animate('.tooltip-window.closing', { 
                     opacity: [1, 0.2],
                     translateY: ['0px', '-40px'],  
@@ -80,6 +94,7 @@ function TooltipWindow({
 
         const el = tooltipRef.current;
 
+        
         const prevVisibility = el.style.visibility;
         const prevDisplay = el.style.display;
 
@@ -99,6 +114,8 @@ function TooltipWindow({
 
     // Запуск анимаций
     useEffect(() => {
+
+        
         if (!tooltipRef.current) return;
         if (!isActive || !tooltipData) return;
         if (!isMeasured) return;
@@ -115,11 +132,15 @@ function TooltipWindow({
             el.classList.remove('closing');
             el.classList.add('active');
 
-            tooltipScope.current.methods.showTooltip();
+            if  ( !animationStart ){
+                tooltipScope.current.methods.showTooltip();
 
-            if (onAnimationOpenEnd) {
-                setTimeout(onAnimationOpenEnd, 200);
+                if (onAnimationOpenEnd) {
+                    setTimeout(onAnimationOpenEnd, 200);
+                }
             }
+
+            
         }
 
         if (phase === 'closing' || phase === 'switching') {
@@ -136,16 +157,18 @@ function TooltipWindow({
 
     if (!tooltipData) return null;
 
-    // Для начальной отрисовки класс .active можно не навешивать тут —
-    // мы делаем это в useEffect на opening.
+    
     return (
         <div
             ref={tooltipRef}
             className={`tooltip-window ${ isViewerCaller ? "viewer-caller" : "" }`}  
+
+            data-id={tooltipData.id}
+
             style={
                 isMeasured
                     ? finalPosition
-                    : { visibility: 'hidden', left: 0, top: 0 }
+                    : {visibility: 'hidden',  left: 0, top: 0 }
             }
         >
             <div className="tooltip-window__inner">

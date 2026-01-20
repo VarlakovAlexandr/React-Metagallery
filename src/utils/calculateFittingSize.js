@@ -1,5 +1,8 @@
-// utils/calculateFittingSize.js (можешь оставить в том же файле)
+// utils/calculateFittingSize.js 
 export function calculateFittingSize(containerWidth, containerHeight, imageWidth, imageHeight) {
+
+    console.log('calculateFittingSize');
+
     if (!containerWidth || !containerHeight) return { width: 0, height: 0 };
     
     const containerRatio = containerWidth / containerHeight;

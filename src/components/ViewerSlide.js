@@ -11,12 +11,8 @@ import React, {
 
 import { animate, createScope } from 'animejs';
 import { calculateFittingSize } from '../utils/calculateFittingSize';
-import { nanoid } from 'nanoid';
 
-
-
-
-function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClick, isZoomed, getSwiper, itemsShownText }) {
+function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClick, isZoomed, getSwiper, itemsShownText, dataTest }) {
     const [fittingSizes, setFittingSizes] = useState({ width: 0, height: 0 });
 
     const [hoveredTooltipId, setHoveredTooltipId] = useState(null);
@@ -47,16 +43,14 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
 
     const [showFullCaption, setShowFullCaption] = useState(false);
     const [showAnimationFullCaption, setShowAnimationFullCaption] = useState(false);
-    //const [zoomValue, setZoomValue] = useState(1);
-    /*
-     * Проверка, что caption обрезан (клонированный блок выше видимого)
-     */
+    
 
     // Добавляем ref для контейнера
     const mainContainerRef = useRef(null);
 
+   
     
-    
+
     // Добавляем обработчик wheel
     useEffect(() => {
         const container = mainContainerRef.current;
@@ -133,6 +127,8 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
             media.width,
             media.height
         );
+
+        
 
         setFittingSizes(sizes);
     }, [media.width, media.height]);
@@ -410,6 +406,9 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
             });
 
             self.add('cardClick', () => {
+                console.log( 'animation open cards start' )
+
+
                 const screenWidth = document.documentElement.clientWidth;
                 if (screenWidth >= 992) return;
 
@@ -487,36 +486,23 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
         };
     }, [mediaProductCards]);
 
-    /*
-     * При первом монтировании слайда — посчитать размеры и разложить карточки
-     */
-    useLayoutEffect(() => {
-        const update = () => {
-            recalcFittingSizes();
-        };
-
-        update();
-        window.addEventListener('resize', update);
-
-        return () => {
-            window.removeEventListener('resize', update);
-        };
-    }, [recalcFittingSizes]);
-
-
-
-
+    
     // вызываем пересчёт только когда зум вернулся к 1
     useEffect(() => {
         if (isZoomed) return;
 
-        // небольшая задержка, чтобы Swiper успел снять классы swiper-slide-zoomed и т.п.
+        // Проверяем, действительно ли нужно пересчитывать
+        // (если fittingSizes уже рассчитаны и не нулевые)
+        if (fittingSizes.width > 0 && fittingSizes.height > 0) {
+            return;
+        }
+
         const t = setTimeout(() => {
             recalcFittingSizes();
-        }, 50); // можно подобрать экспериментально 0 / 16 / 50
+        }, 50);
 
         return () => clearTimeout(t);
-    }, [isZoomed, recalcFittingSizes]);
+    }, [isZoomed, recalcFittingSizes, fittingSizes.width, fittingSizes.height]);
 
     // Запуск раскладки карточек после того, как размеры известны
     useEffect(() => {
@@ -553,6 +539,8 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
         setHoveredTooltipId(null);
     };
 
+
+    
     /*
      * Рендер изображения + Swiper Zoom
      * Пины — поверх, в отдельном overlay, но всё равно привязаны к fittingSizes
@@ -568,7 +556,7 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
             <div
                 className="metagallery-item-viewer__img-main-container"
                 ref={(node) => {
-                    // Исправляем: mainContainerRef должен указывать на этот контейнер
+                    
                     containerRef.current = node;
                     mainContainerRef.current = node;
                 }}
@@ -579,8 +567,7 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
                     className="swiper-zoom-container"
                     ref={imageViewportRef}
                     style={{
-                        width: width || 0,
-                        height: height || 0,
+                        
                         margin: 'auto',
                         position: 'relative',
                     }}
@@ -611,9 +598,6 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
                     )
                 }
 
-                    
-                </div>
-
                 {/* Пины: отдельный overlay-слой, совпадает по размерам с viewport */}
                 <div
                     className="metagallery-item-viewer__outer-img-container"
@@ -629,17 +613,22 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
                         top: '50%',
                         width: width || 0,
                         height: height || 0,
+                        zIndex: 100,
                         transform: 'translate(-50%, -50%)',
                     }}
                 >
                     {media.tooltips && media.tooltips.map((tooltip) => {
+                        
+                        
+
                         const highlightedClass = isTooltipHighlighted(tooltip.id);
                         const isActive = isTooltipActive(tooltip.id);
                         const tooltipClass = `tooltip-window-trigger ${isActive ? 'active' : highlightedClass || ''}`;
 
                         return (
                             <button
-                                
+                                key={`slide-${mediaIndex}-${media.id}-tooltip-${tooltip.id}`}
+                                data-info={`slide-${mediaIndex}-${media.id}-tooltip-${tooltip.id}`}
                                 className={tooltipClass}
                                 style={{
                                     left: `${tooltip.x}%`,
@@ -649,15 +638,9 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
                                 }}
                                 onClick={(e) => {
                                     e.stopPropagation();
-
+                                    
                                     handleTooltipClick(tooltip, e)
 
-                                    /*if (onTooltipClick) {
-                                        onTooltipClick({
-                                            media,
-                                            tooltipData: tooltip,
-                                        });
-                                    }*/
                                 }}
                             >
                                 <svg width="8" height="8" viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -667,21 +650,15 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
                         );
                     })}
                 </div>
+                    
+                </div>
+
+                
 
                
             </div>
         );
     };
-
-
-
-    /*
-     * Рендер Zoom Slider (без логики изменения масштаба — она у Swiper)
-     */
-  
-
-
-
 
 
     /*
@@ -694,6 +671,8 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
         const root = productsRootRef.current;
         if (!root) return;
         const parent = root.closest('.metagallery-item-viewer-card-container');
+
+        console.log('cards click');
 
         if (parent && !parent.classList.contains('mobile-open')) {
             e.preventDefault();
@@ -708,6 +687,9 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
      * Клик по контейнеру с карточками на мобильном
      */
     const handleClickOnMobileContainer = (e) => {
+        console.log('cards click2');
+
+
         const screenWidth = document.documentElement.clientWidth;
         if (screenWidth >= 992) return;
 
@@ -959,6 +941,7 @@ function ViewerSlide({media, mediaIndex, mediaList, activeTooltip, onTooltipClic
             className="metagallery-item-viewer__slide-root"
             ref={slideRootRef}
             onClick={handleCaptionOutsideClick}
+            data-test-index={dataTest}
         >
             {media.tooltips && media.tooltips.length > 0 && (
                 <div

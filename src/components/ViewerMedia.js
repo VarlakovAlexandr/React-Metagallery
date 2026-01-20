@@ -48,7 +48,7 @@ function ViewerMedia({ media, mediaIndex, mediaList, onClose, onTooltipClick, ac
     const containerRef = useRef(null);
     
 
-    const imageContainerRef = useRef(null); // уже был — внутренний блок с изображением
+    const imageContainerRef = useRef(null); 
     const productsRootRef = useRef(null);
     const productsScope = useRef(null);
 
@@ -93,7 +93,7 @@ function ViewerMedia({ media, mediaIndex, mediaList, onClose, onTooltipClick, ac
         }, [currentIndex, media.caption]);
 
 
-        // Обновленный рендеринг caption с условием
+        //  рендеринг caption с условием
         const renderCaption = () => {
             if (!media.caption) return null;
             
@@ -791,7 +791,7 @@ function ViewerMedia({ media, mediaIndex, mediaList, onClose, onTooltipClick, ac
         if (productsScope.current && productsScope.current.methods) {
             productsScope.current.methods.placementOfCards();
         }
-    }, [currentIndex]); // Зависимости, которые требуют перерасчета карточек
+    }, [currentIndex]); 
 
     const isTooltipActive = (tooltipId) => {
         return activeTooltip && 
@@ -817,12 +817,6 @@ function ViewerMedia({ media, mediaIndex, mediaList, onClose, onTooltipClick, ac
         setHoveredTooltipId(null);
     };
 
-
-
-
-
-    
-    
 
 
     useLayoutEffect(() => {
@@ -870,12 +864,6 @@ function ViewerMedia({ media, mediaIndex, mediaList, onClose, onTooltipClick, ac
     const baseW = fittingSizes.width || 0;
     const baseH = fittingSizes.height || 0;
    
-    
-
-
-
-    
-
     return (
         <div className="metagallery-item-viewer__outer-img-container" >
         {mediaList[currentIndex].tooltips && mediaList[currentIndex].tooltips.map((tooltip) => {
@@ -923,10 +911,6 @@ function ViewerMedia({ media, mediaIndex, mediaList, onClose, onTooltipClick, ac
         </div>
     );
     };
-
-
-
-
 
 
     //Отрисовка Zoom слайдера

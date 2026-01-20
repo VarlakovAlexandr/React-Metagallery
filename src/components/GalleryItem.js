@@ -12,19 +12,24 @@ function GalleryItem({ media, baseWidth, onTooltipClick, activeTooltip, mediaLis
         return (baseWidth * initialHeight) / initialWidth;
     }
 
-
-    
     const handleTooltipClick = (tooltipData, event) => {
         event.stopPropagation();
         
+        // Создаем объект с полной информацией
+        const fullTooltipData = {
+            ...tooltipData,
+            sourceMediaId: media.id,
+            sourceMediaIndex: mediaIndex
+        };
+        
         const isCurrentlyActive = activeTooltip && 
-                                 activeTooltip.tooltipData.id === tooltipData.id && 
-                                 activeTooltip.mediaId === media.id;
+                                activeTooltip.tooltipData.id === tooltipData.id && 
+                                activeTooltip.mediaId === media.id;
         
         if (isCurrentlyActive) {
             onTooltipClick(null, null, null);
         } else {
-            onTooltipClick(tooltipData, event.currentTarget, media.id);
+            onTooltipClick(fullTooltipData, event.currentTarget, media.id);
         }
     };
 
@@ -143,10 +148,9 @@ function GalleryItem({ media, baseWidth, onTooltipClick, activeTooltip, mediaLis
             {viewerIsVisible && (
                 <ViewerSlider
                     media={media}
-                    mediaIndex={mediaIndex}
+                    initialMediaId={media.id}
                     mediaList={mediaList}
                     onClose={closeViewer}
-                    initialIndex = { mediaIndex }
                     onTooltipClick={onTooltipClick}
                     activeTooltip={activeTooltip}
                     itemsShownText={itemsShownText}
@@ -159,16 +163,4 @@ function GalleryItem({ media, baseWidth, onTooltipClick, activeTooltip, mediaLis
     );
 }
 
-//export default GalleryItem;
-
-// Сравниваем только необходимые пропсы
-const areEqual = (prevProps, nextProps) => {
-    return (
-        prevProps.media.id === nextProps.media.id &&
-        prevProps.baseWidth === nextProps.baseWidth &&
-        prevProps.activeTooltip?.mediaId === nextProps.activeTooltip?.mediaId &&
-        prevProps.activeTooltip?.tooltipData?.id === nextProps.activeTooltip?.tooltipData?.id
-    );
-};
-
-export default memo(GalleryItem, areEqual);
+export default GalleryItem;
